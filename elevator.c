@@ -4,7 +4,7 @@
 #include <time.h>
 #include <unistd.h>
 
-int request_elevator() {
+int generate_floors() {
   int start_floor, end_floor;
   //seed time
   srand(time(NULL));
@@ -16,6 +16,31 @@ int request_elevator() {
     printf("The start floor: %d\n", start_floor);
   return end_floor;
 }
+
+// helper function for absolute difference
+int abd(int a, int b) {
+    /*
+    * Helper function to find the absolute difference between two numbers
+    *
+    */
+
+    if (a > b) {
+    return a - b;
+    }
+    else {
+        return b -a;
+    }
+}
+
+
+// calculate wait time for each thread
+
+int travel_time(int start_floor, int end_floor){
+ int travel_time = abd(end_floor, start_floor) * 2;
+ return travel_time;
+
+}
+
 
 //Function to create threads
 int create_thread(){
@@ -30,8 +55,10 @@ int create_thread(){
 
 }
 
+
+
 int main(void) {
-  printf("this is the end floor %d", request_elevator());
+  printf("this is the end floor %d", generate_floors());
   return 0;
 }
 
