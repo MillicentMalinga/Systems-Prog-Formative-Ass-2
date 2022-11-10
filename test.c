@@ -1,26 +1,29 @@
-#include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <ctype.h>
+#include <stdlib.h>
+#include <time.h>
+#include <pthread.h>
 
-void *travelling(int arr[]){
-pthread_mutex_lock(&lock);
+/*
+condition variables to manage the threads
+*/
+#define MAX_CAPACITY 5
+pthread_cond_t avSpace; //to signal empty spaces. 
+pthread_mutex_t elevatorLock;
+int riders = 0;
+/* the struct Rider holds information about the elevator riders. Their start is 
+their starting floor, and end is the destination. wait_time is the time to travel from 
+start to finish. ]
+*/
+typedef struct Rider{
+   int start, end, wait_time;
+}Rider;
 
-	printf("\n Job %d has started\n", counter);
-            sleep(2);
-	printf("\n Job %d has finished\n", counter);
-
-	pthread_mutex_unlock(&lock);
-
-}
+Rider riderQueue[10]; // assumption that the building only hosts 10 people max. 
 
 
-
-
-// helper function for absolute difference
-int abd(int a, int b) {
+int abslute_diff(int a, int b) {
     /*
     * Helper function to find the absolute difference between two numbers
     *
@@ -34,53 +37,79 @@ int abd(int a, int b) {
     }
 }
 
-struct Floors {
-    int start_floor, end_floor, travel_time;
-};
-void *travel(int n){
-
-}
-
-void elevator_simulator(){
-    time_t t;
-    int dest_floors[5];
-    int num_passengers, available_space, final_destination=8, capacity=5;
-    int direction = 1, state = 0, current_number=0, current_floor = 7;
-    srand((unsigned) time(&t));
-    struct Floors passengers[5];
-
-// generating array of end floor
-// for(int j = 0; j < 5; j++){
-//     dest_floors[j] = (rand() % 8) + 1;
-
-// }
-    num_passengers = rand() % 6;
-    if (num_passengers == 0) {
-        printf("No passengers calling the elevator for now.\n");
-    }
-    printf("%d\n", num_passengers);
-    for (int i = 0; i < num_passengers; i++){
-
-
-        passengers[i].start_floor = current_floor;
-        passengers[i].end_floor = (rand() % 8) +1;
-
-        if (passengers[i].end_floor < current_floor) {
-            passengers[i].travel_time = (final_destination * 2) + abd(passengers[i].end_floor, current_floor) * 2;
-
-        }
-        if (passengers[i].end_floor > current_floor ) {
-            passengers[i].travel_time = (passengers[i].end_floor - current_floor) * 2;
-        }
-
-     
-        printf("For passenger %d: start floor is %d and destination %d with %d travel time\n", i+1, passengers[i].start_floor, passengers[i].end_floor, passengers[i].travel_time);
-    }
-
-
+void load(Rider rider) {
+    pthread_mutex_lock(&elevatorLock);
+    riderQueue[riders] = rider;
+    riders++;
+    pthread_mutex_unlock(&elevatorLock);
+    pthread_cond_signal(&avSpace);
+    return NULL;
 }
 
 
-void main(){
-    elevator_simulator();
+void transport(Rider*  rider) {
+    rider->wait_time = abslute_diff(rider->start, rider->end) * 2;
+    // for(int i = 0; i < rider->wait_time; i++){
+        printf("\nLeaving floor %d\n", rider->start);
+        sleep(rider->wait_time);
+        // if (rider->start < rider->end){
+        // // printf("\nArriving on floor %d\n", rider->start++);
+        // }
+        // if (rider->start > rider->end){
+        //             printf("\nArriving on floor %d\n", rider->start--);
+        // }
+    
+    printf("\nWelcome to floor %d\n", rider->end);
+    return NULL;
+}
+
+
+void* travel(void* args) {
+    while (1) {
+        Rider rider;
+
+        pthread_mutex_lock(&elevatorLock);
+        while (riders == 0) {
+            pthread_cond_wait(&avSpace, &elevatorLock);
+        }
+
+        rider = riderQueue[0];
+        for (int i = 0; i < riders - 1; i++) {
+            riderQueue[i] = riderQueue[i + 1];
+        }
+        riders--;
+        pthread_mutex_unlock(&elevatorLock);
+        transport(&rider);
+        return NULL;
+    }
+}
+
+int main(int argc, char* argv[]) {
+    pthread_t th[MAX_CAPACITY];
+    pthread_mutex_init(&elevatorLock, NULL);
+    pthread_cond_init(&avSpace, NULL);
+    int i;
+    for (i = 0; i < MAX_CAPACITY; i++) {
+        if (pthread_create(&th[i], NULL, &travel, NULL) != 0) {
+            perror("Failed to create the thread");
+        }
+    }
+
+    srand(time(NULL));
+    for (i = 0; i < 5; i++) {
+        Rider r = {
+            .start = 1,
+            .end = (rand() % 8) + 1
+        };
+        load(r);
+    }
+
+    for (i = 0; i < MAX_CAPACITY; i++) {
+        if (pthread_join(th[i], NULL) != 0) {
+            perror("Failed to join the thread");
+        }
+    }
+    pthread_mutex_destroy(&elevatorLock);
+    pthread_cond_destroy(&avSpace);
+    return 0;
 }
