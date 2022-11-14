@@ -19,10 +19,12 @@ typedef struct Rider{
   int waiters = 0;
     int waiting[20];
 pthread_mutex_t elevatorMutex[2];
-pthread_barrier_t collectBarrier;
+
 int currentFloor[2] = { 1, 1 };
 int picked_up[10];
 int capacity;
+
+/* Function to collect people waiting for the elevator*/
 void collectUsers(){
     printf("How many people are waiting for the elevators?\n");
     scanf("%d", &waiters);
@@ -31,6 +33,7 @@ void collectUsers(){
         scanf("%d", &waiting[i]);
     }
 }
+
 // void *offload(Elevator *elevator){
 //    int i;
 //    for(i = 0; i < elevator->capacity; i++){
@@ -39,11 +42,13 @@ void collectUsers(){
 //         elevator.capacity--;
 // }
 // }
+
+/* Main elevator function */
 void* travel(void* args) {
     int direction = 1;
 
     for (int i = 0; i < 2; i++) {
-        if (pthread_mutex_trylock(&elevatorMutex[i]) == 0) {
+        if (pthread_mutex_trylock(&elevatorMutex[i]) == 0) { 
             while(1){
                 
                 printf("\nElevator %d current floor: %d\n\n", i+1, currentFloor[i]);
