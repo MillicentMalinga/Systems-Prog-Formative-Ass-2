@@ -9,3 +9,4 @@ Current issues:
 POSSIBLE SOLUTIONS
 1. Implement barriers to ensure that each rider gets off the elevator at their destination floor
 
+https://docs.google.com/document/d/1M_EUI2_5DCL5gwRzwnJf1XDWmKzkbIWnL38Vl3amYxI/edit?usp=sharing
